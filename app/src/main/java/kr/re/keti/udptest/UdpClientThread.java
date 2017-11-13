@@ -45,40 +45,40 @@ public class UdpClientThread extends Thread{
 
     @Override
     public void run() {
-        sendState("connecting...");
+        //sendState("connecting...");
+        Log.d("UTRD", "connecting....");
         running = true;
         try {
             while(true)
             {
                 /* create multicast socket */
                 //socket = new DatagramSocket(1000);
-                socket = new MulticastSocket(dstPort);
-                Log.d("TAG", "create socket");
+                socket = new MulticastSocket(PORT);
+                Log.d("UTRD", "create socket");
 
                 /* retrieve server address */
-                address = InetAddress.getByName(dstAddress);
-                Log.d("TAG", "retrieve server address: "+address.toString());
+                address = InetAddress.getByName(ADDR);
+                Log.d("UTRD", "retrieve server address: "+address.toString());
                 socket.joinGroup(address);
 
                 /* prepare UDP Packet */
                 byte[] buf = new byte[PACK_LEN];
                 DatagramPacket packet = new DatagramPacket(buf, buf.length);
-                Log.d("TAG", "packet created");
+                Log.d("UTRD", "packet created");
 
                 /* receive packet from Rasp */
                 socket.receive(packet);
-                Log.d("TAG", "Receive packet");
-                sendState("connecting...");
+                Log.d("UTRD", "Receive packet");
 
                 //String line = new String(packet.getData(), 0, packet.getLength());
-                Log.d("UDPDAT", "packet.getLength(): "+ packet.getLength());
-                Log.d("UDPDAT", "packet.getData().length: "+ packet.getData().length);
+                Log.d("UTRD", "packet.getLength(): "+ packet.getLength());
+                Log.d("UTRD", "packet.getData().length: "+ packet.getData().length);
 
                 byte[] dataBuf = packet.getData();
 
                 /* Log data buffer */
                 for(int i=0; i<dataBuf.length; i++)
-                    Log.d("UDPDAT", "packet["+i+"]: " +dataBuf[i]);
+                    Log.d("UTRD", "packet["+i+"]: " +dataBuf[i]);
 
                 /*handler.sendMessage(
                         Message.obtain(handler, MainActivity.UdpClientHandler.UPDATE_MSG, line) );*/
@@ -97,6 +97,7 @@ public class UdpClientThread extends Thread{
                 running = false;
                 socket.close();
                 handler.sendEmptyMessage(MainActivity.UdpClientHandler.UPDATE_END);
+                Log.d("UTRD", "state - UPDATE_END");
             }
         }
 

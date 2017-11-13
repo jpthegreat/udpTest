@@ -1,21 +1,44 @@
 package kr.re.keti.udptest;
 
+import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.SeekBar;
+import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.TextView;
+import android.widget.Toast;
+
+import com.github.mikephil.charting.charts.LineChart;
+import com.github.mikephil.charting.components.Legend;
+import com.github.mikephil.charting.components.Legend.LegendForm;
+import com.github.mikephil.charting.components.Legend.LegendPosition;
+import com.github.mikephil.charting.components.XAxis;
+import com.github.mikephil.charting.components.YAxis;
+import com.github.mikephil.charting.components.YAxis.AxisDependency;
+import com.github.mikephil.charting.data.Entry;
+import com.github.mikephil.charting.data.LineData;
+import com.github.mikephil.charting.data.LineDataSet;
+import com.github.mikephil.charting.highlight.Highlight;
+import com.github.mikephil.charting.interfaces.datasets.ILineDataSet;
+import com.github.mikephil.charting.listener.OnChartValueSelectedListener;
+import com.github.mikephil.charting.utils.ColorTemplate;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity {
+
+//public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements OnSeekBarChangeListener, OnChartValueSelectedListener
+{
 
     Button buttonConnect;
     EditText editTextAddress, editTextPort;
@@ -27,17 +50,26 @@ public class MainActivity extends AppCompatActivity {
     UdpClientHandler udpClientHandler;
     UdpClientThread udpClientThread;
 
+    int PORT = 8888;
+    String ADDR = "224.0.0.2";
 
-    /* from MPAndroid
+    // from MPAndroid
     private LineChart mChart;
-    private SeekBar mSeekBarX, mSeekBarY;
-    private TextView tvX, tvY;
-    */
+/*    private SeekBar mSeekBarX, mSeekBarY;
+    private TextView tvX, tvY;*/
+
+    ArrayList<Entry> yVals1 = new ArrayList<Entry>();
+    ArrayList<Entry> yVals2 = new ArrayList<Entry>();
+    ArrayList<Entry> yVals3 = new ArrayList<Entry>();
+    ArrayList<Entry> yVals4 = new ArrayList<Entry>();
+    int arrIdx = 0;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        /*// original
         setContentView(R.layout.activity_main);
 
         editTextAddress = (EditText) findViewById(R.id.address);
@@ -52,16 +84,19 @@ public class MainActivity extends AppCompatActivity {
 
         buttonConnect.setOnClickListener(buttonConnectOnClickListener);
 
-        udpClientHandler = new UdpClientHandler(this);
+        udpClientHandler = new UdpClientHandler(this);*/
 
-        /*
 
         // MPChart Library
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
                 WindowManager.LayoutParams.FLAG_FULLSCREEN);
         setContentView(R.layout.activity_linechart);
 
-        tvX = (TextView) findViewById(R.id.tvXMax);
+        buttonConnect = (Button)findViewById(R.id.connect);
+        buttonConnect.setOnClickListener(buttonConnectOnClickListener);
+        udpClientHandler = new UdpClientHandler(this);
+
+        /*tvX = (TextView) findViewById(R.id.tvXMax);
         tvY = (TextView) findViewById(R.id.tvYMax);
         mSeekBarX = (SeekBar) findViewById(R.id.seekBar1);
         mSeekBarY = (SeekBar) findViewById(R.id.seekBar2);
@@ -70,14 +105,15 @@ public class MainActivity extends AppCompatActivity {
         mSeekBarY.setProgress(100);
 
         mSeekBarY.setOnSeekBarChangeListener(this);
-        mSeekBarX.setOnSeekBarChangeListener(this);
+        mSeekBarX.setOnSeekBarChangeListener(this);*/
 
         mChart = (LineChart) findViewById(R.id.chart1);
         mChart.setOnChartValueSelectedListener(this);
 
         // no description text
-        mChart.setDescription("");
-        mChart.setNoDataTextDescription("You need to provide data for the chart.");
+        //mChart.setDescription("");
+        mChart.setNoDataText("You need to provide data for the chart.");
+        //mChart.setNoDataTextDescription("You need to provide data for the chart.");
 
         // enable touch gestures
         mChart.setTouchEnabled(true);
@@ -94,12 +130,12 @@ public class MainActivity extends AppCompatActivity {
         mChart.setPinchZoom(true);
 
         // set an alternative background color
-        mChart.setBackgroundColor(Color.LTGRAY);
+        mChart.setBackgroundColor(Color.BLACK);
 
         // add data
-        setData(20, 30);
+        //setData(20, 30);
 
-        mChart.animateX(2500);
+        mChart.animateX(1500);
 
         // get the legend (only possible after setting data)
         Legend l = mChart.getLegend();
@@ -107,36 +143,35 @@ public class MainActivity extends AppCompatActivity {
         // modify the legend ...
         // l.setPosition(LegendPosition.LEFT_OF_CHART);
         l.setForm(LegendForm.LINE);
-        l.setTypeface(mTfLight);
+        //l.setTypeface(mTfLight);
         l.setTextSize(11f);
         l.setTextColor(Color.WHITE);
         l.setPosition(LegendPosition.BELOW_CHART_LEFT);
 //        l.setYOffset(11f);
 
         XAxis xAxis = mChart.getXAxis();
-        xAxis.setTypeface(mTfLight);
+        //xAxis.setTypeface(mTfLight);
         xAxis.setTextSize(11f);
         xAxis.setTextColor(Color.WHITE);
         xAxis.setDrawGridLines(false);
         xAxis.setDrawAxisLine(false);
 
         YAxis leftAxis = mChart.getAxisLeft();
-        leftAxis.setTypeface(mTfLight);
+        //leftAxis.setTypeface(mTfLight);
         leftAxis.setTextColor(ColorTemplate.getHoloBlue());
-        leftAxis.setAxisMaxValue(200f);
-        leftAxis.setAxisMinValue(0f);
+        leftAxis.setAxisMaxValue(5000); //original val 0,200f
+        leftAxis.setAxisMinValue(-1000);
         leftAxis.setDrawGridLines(true);
         leftAxis.setGranularityEnabled(true);
-
+/*
         YAxis rightAxis = mChart.getAxisRight();
-        rightAxis.setTypeface(mTfLight);
+        //rightAxis.setTypeface(mTfLight);
         rightAxis.setTextColor(Color.RED);
         rightAxis.setAxisMaxValue(900);
         rightAxis.setAxisMinValue(-200);
         rightAxis.setDrawGridLines(false);
         rightAxis.setDrawZeroLine(false);
-        rightAxis.setGranularityEnabled(false);
-        */
+        rightAxis.setGranularityEnabled(false);*/
     }
 
     View.OnClickListener buttonConnectOnClickListener =
@@ -144,18 +179,66 @@ public class MainActivity extends AppCompatActivity {
                 @Override
                 public void onClick(View arg0) {
 
-                    udpClientThread = new UdpClientThread(
+                    /*udpClientThread = new UdpClientThread(
                             editTextAddress.getText().toString(),
                             Integer.parseInt(editTextPort.getText().toString()),
-                            udpClientHandler);
+                            udpClientHandler);*/
+                    //udpClientThread = new UdpClientThread("224.0.0.2", 8888, udpClientHandler);
+                    udpClientThread = new UdpClientThread(ADDR, PORT, udpClientHandler);
                     udpClientThread.start();
 
                     buttonConnect.setEnabled(false);
                 }
             };
 
+    // from MPAndroid
+
+
+    @Override
+    public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+
+/*        tvX.setText("" + (mSeekBarX.getProgress() + 1));
+        tvY.setText("" + (mSeekBarY.getProgress()));*/
+
+        //setData(mSeekBarX.getProgress() + 1, mSeekBarY.getProgress());
+
+        // redraw
+        //mChart.invalidate();
+    }
+
+    @Override
+    public void onValueSelected(Entry e, Highlight h) {
+        Log.i("Entry selected", e.toString());
+
+        mChart.centerViewToAnimated(e.getX(), e.getY(), mChart.getData().getDataSetByIndex(h.getDataSetIndex())
+                .getAxisDependency(), 500);
+        //mChart.zoomAndCenterAnimated(2.5f, 2.5f, e.getX(), e.getY(), mChart.getData().getDataSetByIndex(dataSetIndex)
+        // .getAxisDependency(), 1000);
+        //mChart.zoomAndCenterAnimated(1.8f, 1.8f, e.getX(), e.getY(), mChart.getData().getDataSetByIndex(dataSetIndex)
+        // .getAxisDependency(), 1000);
+    }
+
+    @Override
+    public void onNothingSelected() {
+        Log.i("Nothing selected", "Nothing selected.");
+    }
+
+    @Override
+    public void onStartTrackingTouch(SeekBar seekBar) {
+        // TODO Auto-generated method stub
+
+    }
+
+    @Override
+    public void onStopTrackingTouch(SeekBar seekBar) {
+        // TODO Auto-generated method stub
+
+    }
+
+
     private void updateState(String state){
-        textViewState.setText(state);
+        //textViewState.setText(state);
+        Toast.makeText(this, "Connected", Toast.LENGTH_SHORT).show();
     }
 
     private void updateRxMsg(byte[] rxmsg){
@@ -228,7 +311,7 @@ public class MainActivity extends AppCompatActivity {
         // reserved byte
         rvsInt |= ((int)reversed[0]) & 0xff;
 
-        // show data
+        /*// show data - text
         StringBuilder output = new StringBuilder();
         output.append(nodStr+" ");
         output.append("sq: " + Integer.toString(seqInt) + " ");
@@ -249,13 +332,122 @@ public class MainActivity extends AppCompatActivity {
 
         list.add(output.toString());
         adapter.notifyDataSetChanged();
-        listView.setSelection(adapter.getCount()-1);    // scroll to End
+        listView.setSelection(adapter.getCount()-1);    // scroll to End*/
 
+        showData(spiData);  // test
+
+    }
+
+    private void showData(int[] dataVal){
+
+        int val1 = dataVal[0];
+        int val2 = dataVal[1];
+        int val3 = dataVal[2];
+        int val4 = dataVal[3];
+
+        yVals1.add(new Entry(arrIdx, val1));
+        yVals2.add(new Entry(arrIdx, val2));
+        yVals3.add(new Entry(arrIdx, val3));
+        yVals4.add(new Entry(arrIdx++, val4));
+
+        LineDataSet set1, set2, set3, set4;
+
+        if (mChart.getData() != null && mChart.getData().getDataSetCount() > 0)
+        {
+            set1 = (LineDataSet) mChart.getData().getDataSetByIndex(0);
+            set2 = (LineDataSet) mChart.getData().getDataSetByIndex(1);
+            set3 = (LineDataSet) mChart.getData().getDataSetByIndex(2);
+            set4 = (LineDataSet) mChart.getData().getDataSetByIndex(3);
+
+            set1.setValues(yVals1);
+            set2.setValues(yVals2);
+            set3.setValues(yVals3);
+            set4.setValues(yVals4);
+
+            mChart.getData().notifyDataChanged();
+            mChart.notifyDataSetChanged();
+
+        }
+        else
+        {
+            // create a dataset and give it a type
+            set1 = new LineDataSet(yVals1, "SPIData[0]");
+            set1.setAxisDependency(AxisDependency.LEFT);
+            set1.setColor(ColorTemplate.getHoloBlue());
+            //set1.setCircleColor(Color.WHITE);
+            set1.setLineWidth(1f);
+            set1.setDrawCircleHole(false);
+            set1.setCircleRadius(0f);
+            //set1.setFillAlpha(65);
+            //set1.setFillColor(ColorTemplate.getHoloBlue());
+            //set1.setHighLightColor(Color.rgb(244, 117, 117));
+
+            //set1.setFillFormatter(new MyFillFormatter(0f));
+            //set1.setDrawHorizontalHighlightIndicator(false);
+            //set1.setVisible(false);
+            //set1.setCircleHoleColor(Color.WHITE);
+
+            // create a dataset and give it a type
+            set2 = new LineDataSet(yVals2, "SPIData[1]");
+            set2.setAxisDependency(YAxis.AxisDependency.LEFT);
+            set2.setColor(Color.YELLOW);
+            //set2.setCircleColor(Color.WHITE);
+            set2.setLineWidth(1f);
+            set2.setDrawCircleHole(false);
+            set2.setCircleRadius(0f);
+            //set2.setFillAlpha(65);
+            //set2.setFillColor(Color.RED);
+
+            //set2.setHighLightColor(Color.rgb(244, 117, 117));
+            //set2.setFillFormatter(new MyFillFormatter(900f));
+
+            // create a dataset and give it a type
+            set3 = new LineDataSet(yVals2, "SPIData[2]");
+            set3.setAxisDependency(YAxis.AxisDependency.LEFT);
+            set3.setColor(Color.GREEN);
+            //set3.setCircleColor(Color.WHITE);
+            set3.setLineWidth(1f);
+            set3.setDrawCircleHole(false);
+            set3.setCircleRadius(0f);
+            //set3.setFillAlpha(65);
+            //set3.setFillColor(Color.RED);
+
+            //set3.setHighLightColor(Color.rgb(244, 117, 117));
+
+            // create a dataset and give it a type
+            set4 = new LineDataSet(yVals2, "SPIData[3]");
+            set4.setAxisDependency(YAxis.AxisDependency.LEFT);
+            set4.setColor(Color.RED);
+            //set4.setCircleColor(Color.WHITE);
+            set4.setLineWidth(1f);
+            set4.setDrawCircleHole(false);
+            set4.setCircleRadius(0f);
+            //set4.setFillAlpha(65);
+            //set4.setFillColor(Color.RED);
+            //set4.setHighLightColor(Color.rgb(244, 117, 117));
+            //set2.setFillFormatter(new MyFillFormatter(900f));
+
+            ArrayList<ILineDataSet> dataSets = new ArrayList<ILineDataSet>();
+            dataSets.add(set1); // add the datasets
+            dataSets.add(set2);
+            dataSets.add(set3);
+            dataSets.add(set4);
+
+            // create a data object with the datasets
+            LineData data = new LineData(dataSets);
+            //data.setValueTextColor(Color.WHITE);
+            data.setValueTextSize(9f);
+
+            // set data
+            mChart.setData(data);
+        }
+        // redraw
+        mChart.invalidate();
     }
 
     private void clientEnd(){
         udpClientThread = null;
-        textViewState.setText("clientEnd()");
+        //textViewState.setText("clientEnd()");
         buttonConnect.setEnabled(true);
 
     }
@@ -291,4 +483,5 @@ public class MainActivity extends AppCompatActivity {
 
         }
     }
+
 }
