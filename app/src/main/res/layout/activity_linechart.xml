@@ -14,7 +14,7 @@
         android:gravity = "center"
         android:typeface="monospace"
         android:textStyle="bold"
-        android:textSize="18dp"
+        android:textSize="20dp"
         android:textColor="#ffffff"/>
 
     <com.github.mikephil.charting.charts.LineChart
